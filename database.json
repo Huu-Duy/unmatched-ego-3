@@ -1,0 +1,17 @@
+{
+  "players": [
+    {
+      "id": 1,
+      "name": "Player1",
+      "score": 100,
+      "level": 1,
+      "createdAt": "2026-11-12T13:05:16.137Z"
+    }
+  ],
+  "gameSettings": {
+    "volume": 0.8,
+    "graphics": "high",
+    "autoSave": true
+  },
+  "matchHistory": []
+}

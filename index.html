@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Unmatched Ego 2 - Local Edition</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 0; background-color: #0b0e14; color: #fff; overflow: hidden; font-family: sans-serif; }
+      #unity-canvas { width: 100vw; height: 100vh; display: block; outline: none; }
+      #loading-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: radial-gradient(circle, #1a233a 0%, #080a0f 100%);
+        z-index: 99; transition: opacity 0.5s ease;
+      }
+      .spinner {
+        width: 50px; height: 50px; border: 5px solid #2a3b5c; border-top: 5px solid #00f0ff;
+        border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      .loading-text { font-size: 18px; font-weight: bold; letter-spacing: 1px; color: #00f0ff; }
+      .progress-container { width: 320px; height: 10px; background: #222; border-radius: 5px; overflow: hidden; margin-top: 15px; }
+      .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00f0ff, #7000ff); transition: width 0.2s ease; }
+    </style>
+  </head>
+  <body>
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text" id="status-text">Đang tải tài nguyên game...</div>
+      <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <canvas id="unity-canvas"></canvas>
+
+    <!-- Giả lập CrazyGames SDK để game không bị lỗi dừng màn hình -->
+    <script>
+      window.Crazygames = {
+        load: () => {},
+        init: (opts) => { console.log("[MockSDK] Crazygames.init called", opts); },
+        requestAd: (type) => { console.log("[MockSDK] Ad bypassed:", type); },
+        happytime: () => {},
+        gameplayStart: () => {},
+        gameplayStop: () => {},
+        sdkGameLoadingStart: () => {},
+        sdkGameLoadingStop: () => {},
+        requestInviteUrl: () => {},
+        requestBanners: () => {},
+        screenshotReceived: () => {},
+        getUnityInstance: () => {}
+      };
+      window.CrazySDK = window.Crazygames;
+    </script>
+
+    <!-- Unity Loader -->
+    <script src="Build/unmatched-ego-2.loader.js"></script>
+    <script>
+      const canvas = document.querySelector("#unity-canvas");
+      const overlay = document.querySelector("#loading-overlay");
+      const progressBar = document.querySelector("#progress-bar");
+      const statusText = document.querySelector("#status-text");
+
+      createUnityInstance(canvas, {
+        dataUrl: "Build/unmatched-ego-2.data",
+        frameworkUrl: "Build/unmatched-ego-2.framework.js",
+        codeUrl: "Build/unmatched-ego-2.wasm",
+        companyName: "CrazyGames",
+        productName: "Unmatched Ego 2",
+        productVersion: "71"
+      }, (progress) => {
+        const pct = Math.round(progress * 100);
+        progressBar.style.width = pct + "%";
+        statusText.innerText = "Đang khởi tạo game (" + pct + "%)...";
+      }).then((instance) => {
+        window.unityInstance = instance;
+        statusText.innerText = "Khởi động thành công!";
+        setTimeout(() => {
+          overlay.style.opacity = "0";
+          setTimeout(() => overlay.remove(), 500);
+        }, 500);
+      }).catch((err) => {
+        console.error("Lỗi tải game:", err);
+        statusText.innerText = "Lỗi khi tải game: " + err;
+        statusText.style.color = "#ff4d4f";
+      });
+    </script>
+  </body>
+</html>
