@@ -12,3 +12,4 @@ npm-debug.log*
 # Temporary files
 *.tmp
 hts-cache/
+game.zip
