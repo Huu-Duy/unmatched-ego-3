@@ -19,18 +19,20 @@
         border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
       }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-      .loading-text { font-size: 18px; font-weight: bold; letter-spacing: 1px; color: #00f0ff; }
-      .progress-container { width: 320px; height: 10px; background: #222; border-radius: 5px; overflow: hidden; margin-top: 15px; }
-      .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00f0ff, #7000ff); transition: width 0.2s ease; }
+      .loading-text { font-size: 18px; font-weight: bold; letter-spacing: 0.5px; color: #00f0ff; min-height: 24px; text-align: center; }
+      .loading-subtext { font-size: 13px; color: #8899aa; margin-top: 8px; }
+      .progress-container { width: 340px; height: 10px; background: #222; border-radius: 5px; overflow: hidden; margin-top: 15px; border: 1px solid #334466; }
+      .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00f0ff, #7000ff); transition: width 0.15s ease; }
     </style>
   </head>
   <body>
     <div id="loading-overlay">
       <div class="spinner"></div>
-      <div class="loading-text" id="status-text">Đang tải tài nguyên game...</div>
+      <div class="loading-text" id="status-text">Đang kết nối máy chủ...</div>
       <div class="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
       </div>
+      <div class="loading-subtext" id="subtext">Lần đầu tải có thể mất 10-15s, lần sau sẽ vào tức thì</div>
     </div>
 
     <canvas id="unity-canvas"></canvas>
@@ -61,6 +63,7 @@
       const overlay = document.querySelector("#loading-overlay");
       const progressBar = document.querySelector("#progress-bar");
       const statusText = document.querySelector("#status-text");
+      const subtext = document.querySelector("#subtext");
 
       createUnityInstance(canvas, {
         dataUrl: "Build/unmatched-ego-2.data",
@@ -68,18 +71,27 @@
         codeUrl: "Build/unmatched-ego-2.wasm",
         companyName: "CrazyGames",
         productName: "Unmatched Ego 2",
-        productVersion: "71"
+        productVersion: "71",
+        cacheControl: function (url) {
+          return "immutable";
+        }
       }, (progress) => {
         const pct = Math.round(progress * 100);
         progressBar.style.width = pct + "%";
-        statusText.innerText = "Đang khởi tạo game (" + pct + "%)...";
+        if (progress < 0.9) {
+          const downloadPct = Math.min(100, Math.round(progress / 0.9 * 100));
+          statusText.innerText = "Đang tải tài nguyên 3D (" + downloadPct + "%)...";
+        } else {
+          statusText.innerText = "Đang nạp đồ họa và khởi chạy Unity (" + pct + "%)...";
+          subtext.innerText = "Đang xử lý trong RAM máy tính của bạn...";
+        }
       }).then((instance) => {
         window.unityInstance = instance;
         statusText.innerText = "Khởi động thành công!";
         setTimeout(() => {
           overlay.style.opacity = "0";
           setTimeout(() => overlay.remove(), 500);
-        }, 500);
+        }, 400);
       }).catch((err) => {
         console.error("Lỗi tải game:", err);
         statusText.innerText = "Lỗi khi tải game: " + err;
