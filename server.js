@@ -2,7 +2,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
+const HOST = '0.0.0.0';
 const BASE_DIR = __dirname;
 const DB_PATH = path.join(BASE_DIR, 'database.json');
 
@@ -36,7 +37,11 @@ function getDatabase() {
 }
 
 function saveDatabase(data) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  try {
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('[Database Error] Không thể ghi file:', err.message);
+  }
 }
 
 const MIME_TYPES = {
@@ -68,10 +73,23 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
 
-  const urlObj = new URL(req.url, `http://${req.headers.host}`);
+  let urlObj;
+  try {
+    urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  } catch (e) {
+    res.writeHead(400, { 'Content-Type': 'text/plain' });
+    return res.end('Bad Request');
+  }
+
   let pathname = urlObj.pathname;
 
-  // 1. API DATABASE ENDPOINTS
+  // 1. HEALTH CHECK ENDPOINT (Dành cho Render / Cloud Monitoring)
+  if (pathname === '/healthz' || pathname === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    return res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
+  }
+
+  // 2. API DATABASE ENDPOINTS
   if (pathname === '/api/database' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     return res.end(JSON.stringify(getDatabase(), null, 2));
@@ -97,12 +115,13 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 2. STATIC FILES SERVING (Game Files)
+  // 3. STATIC FILES SERVING (Game WebGL Files)
   if (pathname === '/') {
     pathname = '/index.html';
   }
 
-  const filePath = path.join(BASE_DIR, decodeURIComponent(pathname));
+  const safePath = path.normalize(decodeURIComponent(pathname)).replace(/^(\.\.[\/\\])+/, '');
+  const filePath = path.join(BASE_DIR, safePath);
 
   // Kiểm tra file có tồn tại không
   fs.stat(filePath, (err, stats) => {
@@ -126,25 +145,42 @@ const server = http.createServer((req, res) => {
       else if (filePath.includes('.data.')) contentType = 'application/octet-stream';
     }
 
+    // Tối ưu cache: File trong Build/ được cache vĩnh viễn giúp client load tức thì
+    const isBuildAsset = pathname.startsWith('/Build/');
     const headers = {
       'Content-Type': contentType,
       'Content-Length': stats.size,
-      'Cache-Control': 'no-cache'
+      'Cache-Control': isBuildAsset ? 'public, max-age=31536000, immutable' : 'no-cache'
     };
 
     res.writeHead(200, headers);
+
     const readStream = fs.createReadStream(filePath);
+    
+    // Ngăn chặn server crash khi client đóng kết nối giữa chừng (ví dụ đóng tab lúc tải 56MB)
+    readStream.on('error', (streamErr) => {
+      console.error('[Stream Error]:', streamErr.message);
+      if (!res.headersSent) {
+        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      }
+      res.end();
+    });
+
+    res.on('close', () => {
+      readStream.destroy();
+    });
+
     readStream.pipe(res);
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   console.log(`====================================================`);
   console.log(`  🎮 SERVER & DATABASE GAME UNMATCHED EGO 2`);
   console.log(`====================================================`);
-  console.log(`  🌐 Game URL:     http://localhost:${PORT}`);
-  console.log(`  💾 Database API: http://localhost:${PORT}/api/database`);
+  console.log(`  🌐 Port:         ${PORT}`);
+  console.log(`  🌐 Host:         ${HOST}`);
+  console.log(`  💾 Database API: /api/database`);
   console.log(`  📁 Thư mục game: ${BASE_DIR}`);
-  console.log(`  👉 Mở trình duyệt và truy cập: http://localhost:${PORT}`);
   console.log(`====================================================`);
 });

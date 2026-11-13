@@ -1,0 +1,12 @@
+{
+  "name": "unmatched-ego-2",
+  "version": "1.0.0",
+  "description": "Unmatched Ego 2 WebGL Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

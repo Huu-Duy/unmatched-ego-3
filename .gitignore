@@ -9,6 +9,9 @@ $RECYCLE.BIN/
 *.log
 npm-debug.log*
 
+# Node
+node_modules/
+
 # Temporary files
 *.tmp
 hts-cache/
