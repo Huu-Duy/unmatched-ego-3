@@ -65,15 +65,33 @@
       const statusText = document.querySelector("#status-text");
       const subtext = document.querySelector("#subtext");
 
+      // Xóa bộ nhớ đệm UnityCache của trình duyệt để luôn tải bản vá mới nhất
+      try {
+        if (window.indexedDB && window.indexedDB.databases) {
+          window.indexedDB.databases().then(dbs => {
+            dbs.forEach(db => {
+              if (db.name && db.name.includes("UnityCache")) {
+                console.log("[CACHE] Đang làm mới cache Unity:", db.name);
+                indexedDB.deleteDatabase(db.name);
+              }
+            });
+          }).catch(() => {});
+        } else if (window.indexedDB) {
+          indexedDB.deleteDatabase("UnityCache");
+        }
+      } catch(e) {}
+
+      const BUILD_VER = "v4";
+
       createUnityInstance(canvas, {
-        dataUrl: "Build/unmatched-ego-2.data",
-        frameworkUrl: "Build/unmatched-ego-2.framework.js",
-        codeUrl: "Build/unmatched-ego-2.wasm",
+        dataUrl: "Build/unmatched-ego-2.data?" + BUILD_VER,
+        frameworkUrl: "Build/unmatched-ego-2.framework.js?" + BUILD_VER,
+        codeUrl: "Build/unmatched-ego-2.wasm?" + BUILD_VER,
         companyName: "CrazyGames",
         productName: "Unmatched Ego 2",
-        productVersion: "71",
+        productVersion: "72",
         cacheControl: function (url) {
-          return "immutable";
+          return "no-store";
         }
       }, (progress) => {
         const pct = Math.round(progress * 100);
@@ -117,8 +135,8 @@
           ⚽ UNMATCHED EGO 2 MOD
         </div>
         <div style="font-size: 12px; color: #00ff88; margin-bottom: 10px;">
-          ✓ Toàn bộ 25 Skills: <b>MIỄN PHÍ 100%</b><br>
-          <span style="color: #aaa; font-size: 11px;">(Vào mục Skills để trang bị tùy thích)</span>
+          ✓ Toàn bộ Kỹ Năng (Skills): <b>ĐÃ MỞ KHÓA HOÀN TOÀN</b><br>
+          <span style="color: #aaa; font-size: 11px;">(Trang bị ngay lập tức, hoàn toàn miễn phí không tốn Coin)</span>
         </div>
         <button class="mod-btn" onclick="addCoins(999999)">💰 Nhận +999,999 Coins</button>
         <button class="mod-btn" onclick="addCoins(100000)">🪙 Nhận +100,000 Coins</button>
