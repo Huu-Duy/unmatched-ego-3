@@ -92,11 +92,128 @@
           overlay.style.opacity = "0";
           setTimeout(() => overlay.remove(), 500);
         }, 400);
+
+        // Tự động tặng 999,999 Coins khi game vào sảnh chính
+        setTimeout(() => {
+          try {
+            instance.SendMessage("CurrencyManager", "AddMoney", 999999);
+            console.log("[MOD] Đã tự động nạp 999,999 Coins thành công!");
+          } catch(e) {
+            console.warn("[MOD] Chưa sẵn sàng SendMessage:", e);
+          }
+        }, 3500);
       }).catch((err) => {
         console.error("Lỗi tải game:", err);
         statusText.innerText = "Lỗi khi tải game: " + err;
         statusText.style.color = "#ff4d4f";
       });
+    </script>
+
+    <!-- Bảng điều khiển Mod Menu & Trợ năng Kỹ năng -->
+    <div id="mod-toolbar">
+      <button id="mod-toggle" onclick="toggleModMenu()">⚡ KỸ NĂNG & MENU</button>
+      <div id="mod-content">
+        <div style="font-weight: bold; color: #00f0ff; margin-bottom: 8px; font-size: 14px;">
+          ⚽ UNMATCHED EGO 2 MOD
+        </div>
+        <div style="font-size: 12px; color: #00ff88; margin-bottom: 10px;">
+          ✓ Toàn bộ 25 Skills: <b>MIỄN PHÍ 100%</b><br>
+          <span style="color: #aaa; font-size: 11px;">(Vào mục Skills để trang bị tùy thích)</span>
+        </div>
+        <button class="mod-btn" onclick="addCoins(999999)">💰 Nhận +999,999 Coins</button>
+        <button class="mod-btn" onclick="addCoins(100000)">🪙 Nhận +100,000 Coins</button>
+        <div style="margin-top: 10px; border-top: 1px solid #334466; padding-top: 8px; font-size: 11px; color: #cbd5e1; line-height: 1.5;">
+          <b>🎮 Phím điều khiển kỹ năng:</b><br>
+          • <b>R</b>: Kỹ Năng 1 (Skill 1)<br>
+          • <b>T</b>: Kỹ Năng 2 (Skill 2)<br>
+          • <b>F</b>: Thức tỉnh (Awakening)<br>
+          • <b>Shift</b>: Bứt tốc (Sprint Burst)<br>
+          • <b>Space</b>: Sút bổng / Volley
+        </div>
+      </div>
+    </div>
+
+    <style>
+      #mod-toolbar {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 1000;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      #mod-toggle {
+        background: linear-gradient(135deg, #00f0ff, #7000ff);
+        color: #fff;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 240, 255, 0.4);
+        transition: transform 0.2s, box-shadow 0.2s;
+        float: right;
+      }
+      #mod-toggle:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(112, 0, 255, 0.6);
+      }
+      #mod-content {
+        display: none;
+        clear: both;
+        margin-top: 10px;
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid #00f0ff44;
+        border-radius: 12px;
+        padding: 14px;
+        width: 250px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
+      }
+      .mod-btn {
+        width: 100%;
+        background: #1e293b;
+        color: #e2e8f0;
+        border: 1px solid #334155;
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 6px;
+        transition: background 0.2s, border-color 0.2s;
+        text-align: left;
+      }
+      .mod-btn:hover {
+        background: #334155;
+        border-color: #00f0ff;
+        color: #00f0ff;
+      }
+    </style>
+
+    <script>
+      function toggleModMenu() {
+        const content = document.getElementById("mod-content");
+        if (content.style.display === "block") {
+          content.style.display = "none";
+        } else {
+          content.style.display = "block";
+        }
+      }
+
+      function addCoins(amount) {
+        if (window.unityInstance) {
+          try {
+            window.unityInstance.SendMessage("CurrencyManager", "AddMoney", amount);
+            alert("Đã cộng " + amount.toLocaleString() + " Coins thành công!");
+          } catch(e) {
+            console.error("Lỗi khi thêm coins:", e);
+            alert("Game đang tải, vui lòng chờ vào sảnh chính rồi thử lại!");
+          }
+        } else {
+          alert("Unity chưa tải xong, vui lòng chờ trong giây lát!");
+        }
+      }
     </script>
   </body>
 </html>
