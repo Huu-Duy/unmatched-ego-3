@@ -41,8 +41,10 @@
   - Cấu hình `cacheControl: () => "no-store"` ngăn UnityCache lưu cứng file WebAssembly trong IndexedDB.
   - Script tự động tìm và xóa database `UnityCache` cũ trên trình duyệt người dùng khi mở trang.
 - **Bảng điều khiển Mod (`#mod-toolbar`):**
-  - Giao diện nhỏ gọn góc trên bên phải giúp bật/tắt hướng dẫn kỹ năng.
-  - Tích hợp nút nạp Coin tức thì qua `unityInstance.SendMessage("CurrencyManager", "AddMoney", ...)`.
+  - Giao diện nhỏ gọn góc trên bên phải giúp bật/tắt menu mod.
+  - Tích hợp ô đổi Tên nhân vật (Nickname) tự do không giới hạn.
+  - Hiển thị danh sách phím tắt điều khiển kỹ năng trong trận đấu.
+  - Loại bỏ hoàn toàn sự phụ thuộc vào các nút nạp Coin thủ công nhờ bản vá lõi engine.
 
 ---
 
@@ -67,6 +69,17 @@ Không phụ thuộc vào biến Coin hay dữ liệu lưu trong máy, các hàm
 | **Func #84195** | `21198568` | 15 bytes | Vtable Stub cho `IsSkillUnlocked` | Luôn trả về `1` (`true`) |
 
 $\rightarrow$ **Kết quả:** Tất cả các kỹ năng đều hiển thị sẵn trạng thái sẵn sàng trang bị ("Equip"), khi người chơi bấm vào nút sẽ lập tức trang bị ("Equipped") mà không bao giờ kích hoạt luồng hỏi mua hay trừ Coin.
+
+### 3.3. Gỡ Bỏ Hoàn Toàn Rào Cản Tiền Tệ (Currency Core Bypass Mod)
+Bên cạnh việc mở khóa kỹ năng, toàn bộ hệ thống kiểm tra và chi tiêu tiền tệ (`CurrencyManager`) đã được vô hiệu hóa trực tiếp trong `Build/unmatched-ego-2.wasm`:
+
+| Hàm trong WASM | Offset Byte | Kích Thước | Chức Năng Gốc | Logic Sau Khi Vá |
+| :--- | :--- | :--- | :--- | :--- |
+| **Func #84531** | `21250746` | 17 bytes | `CurrencyManager.CheckMoney` | Luôn trả về `1` (`true` - đủ tiền) |
+| **Func #3197** | `899282` | 25 bytes | `CurrencyManager.SpendMoney` | Thoát ngay lập tức (không trừ coin) |
+| **Func #1328** | `558097` | 68 bytes | `CurrencyManager.SaveMoney` | Thoát ngay lập tức (không lưu giảm tiền) |
+
+$\rightarrow$ **Kết quả:** Người chơi có thể quay Gacha thức tỉnh (`GachaSystem`), mua trang phục, kiểu tóc, phụ kiện (`UnlockableItem`) hoàn toàn tự do và miễn phí mà không cần bất kỳ thao tác nạp tiền nào từ bên ngoài.
 
 ---
 

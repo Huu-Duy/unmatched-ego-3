@@ -109,7 +109,7 @@
       canvas.addEventListener("click", () => canvas.focus());
       canvas.addEventListener("mousedown", () => canvas.focus());
 
-      const BUILD_VER = "v5";
+      const BUILD_VER = "v6";
 
       createUnityInstance(canvas, {
         dataUrl: "Build/unmatched-ego-2.data?" + BUILD_VER,
@@ -139,15 +139,8 @@
           setTimeout(() => overlay.remove(), 500);
         }, 400);
 
-        // Tự động tặng 999,999 Coins và đồng bộ Nickname đã lưu khi game vào sảnh chính
+        // Tự động đồng bộ Nickname đã lưu khi game vào sảnh chính
         setTimeout(() => {
-          try {
-            instance.SendMessage("CurrencyManager", "AddMoney", 999999);
-            console.log("[MOD] Đã tự động nạp 999,999 Coins thành công!");
-          } catch(e) {
-            console.warn("[MOD] Chưa sẵn sàng SendMessage Coins:", e);
-          }
-
           try {
             const savedName = localStorage.getItem("unmatched_player_name");
             if (savedName) {
@@ -190,12 +183,11 @@
           </div>
         </div>
 
-        <div style="font-size: 12px; color: #00ff88; margin-bottom: 10px;">
-          ✓ Toàn bộ Kỹ Năng (Skills): <b>ĐÃ MỞ KHÓA HOÀN TOÀN</b><br>
-          <span style="color: #aaa; font-size: 11px;">(Trang bị ngay lập tức, hoàn toàn miễn phí không tốn Coin)</span>
+        <div style="font-size: 12px; color: #00ff88; margin-bottom: 10px; line-height: 1.5;">
+          ✓ Kỹ năng (Skills): <b>ĐÃ MỞ KHÓA 100%</b><br>
+          ✓ Tiền tệ (Coins): <b>ĐÃ GỠ BỎ RÀO CẢN LÕI</b><br>
+          <span style="color: #cbd5e1; font-size: 11px;">(Mua Skin, Phụ kiện, Quay Gacha hoàn toàn miễn phí trực tiếp từ engine)</span>
         </div>
-        <button class="mod-btn" onclick="addCoins(999999)">💰 Nhận +999,999 Coins</button>
-        <button class="mod-btn" onclick="addCoins(100000)">🪙 Nhận +100,000 Coins</button>
         <div style="margin-top: 10px; border-top: 1px solid #334466; padding-top: 8px; font-size: 11px; color: #cbd5e1; line-height: 1.5;">
           <b>🎮 Phím điều khiển kỹ năng:</b><br>
           • <b>R</b>: Kỹ Năng 1 (Skill 1)<br>
@@ -308,20 +300,6 @@
           }
         }
         alert("Đã lưu tên [" + newName + "] thành công!\nTên này sẽ xuất hiện trong các trận đấu tiếp theo.");
-      }
-
-      function addCoins(amount) {
-        if (window.unityInstance) {
-          try {
-            window.unityInstance.SendMessage("CurrencyManager", "AddMoney", amount);
-            alert("Đã cộng " + amount.toLocaleString() + " Coins thành công!");
-          } catch(e) {
-            console.error("Lỗi khi thêm coins:", e);
-            alert("Game đang tải, vui lòng chờ vào sảnh chính rồi thử lại!");
-          }
-        } else {
-          alert("Unity chưa tải xong, vui lòng chờ trong giây lát!");
-        }
       }
     </script>
   </body>
