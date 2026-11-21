@@ -82,6 +82,7 @@ const server = http.createServer((req, res) => {
   }
 
   let pathname = urlObj.pathname;
+  console.log(`[REQ] ${req.method} ${pathname}`);
 
   // 1. HEALTH CHECK ENDPOINT (Dành cho Render / Cloud Monitoring)
   if (pathname === '/healthz' || pathname === '/api/health') {
@@ -145,12 +146,13 @@ const server = http.createServer((req, res) => {
       else if (filePath.includes('.data.')) contentType = 'application/octet-stream';
     }
 
-    // Tối ưu cache: File trong Build/ được cache vĩnh viễn giúp client load tức thì
-    const isBuildAsset = pathname.startsWith('/Build/');
+    // Tối ưu cache: Development mode / No cache để luôn nhận code mới
     const headers = {
       'Content-Type': contentType,
       'Content-Length': stats.size,
-      'Cache-Control': isBuildAsset ? 'public, max-age=31536000, immutable' : 'no-cache'
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     };
 
     res.writeHead(200, headers);

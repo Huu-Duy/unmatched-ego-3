@@ -43,6 +43,33 @@
         username: (function(){ try { return localStorage.getItem("unmatched_player_name") || "Player"; } catch(e){ return "Player"; } })(),
         profilePictureUrl: ""
       };
+
+      const AWAKENING_NAMES = [
+        'Playmaker', 'Speedster', 'Fakeout', 'Metavision',
+        'Finesse', 'Finisher', 'Destruction', 'Quickshot',
+        'Control', 'Hardhead', 'Genius', 'Emperor',
+        'Inspiration', 'Destroyer'
+      ];
+
+      window.randomizeMatchAwakening = function() {
+        try {
+          const mod = window.unityInstance ? window.unityInstance.Module : (window.Module || null);
+          if (mod && mod.HEAP32) {
+            const randIdx = Math.floor(Math.random() * 14);
+            mod.HEAP32[0x550000 >> 2] = randIdx;
+            mod.HEAP32[0x550004 >> 2] = (Math.random() * 0x7fffffff) | 0;
+            const name = AWAKENING_NAMES[randIdx] || ('Awakening #' + randIdx);
+            console.log(`[AWAKENING RANDOMIZER] Random Awakening set: ${name} (ID #${randIdx})`);
+            const displayEl = document.getElementById("mod-active-awakening");
+            if (displayEl) displayEl.innerText = name + " (#" + randIdx + ")";
+            return randIdx;
+          }
+        } catch (e) {
+          console.warn("[AWAKENING RANDOMIZER] Error:", e);
+        }
+        return -1;
+      };
+
       window.CrazyGames = {
         SDK: {
           environment: "crazygames",
@@ -50,8 +77,25 @@
           load: () => {},
           requestAd: (type) => { console.log("[MockSDK] Ad bypassed:", type); },
           happytime: () => {},
-          gameplayStart: () => {},
-          gameplayStop: () => {},
+          gameplayStart: () => {
+            console.log("[CrazyGames SDK] gameplayStart triggered!");
+            if (window.randomizeMatchAwakening) window.randomizeMatchAwakening();
+          },
+          gameplayStop: () => {
+            console.log("[CrazyGames SDK] gameplayStop triggered!");
+          },
+          game: {
+            settings: {},
+            gameplayStart: () => {
+              console.log("[CrazyGames SDK] game.gameplayStart triggered!");
+              if (window.randomizeMatchAwakening) window.randomizeMatchAwakening();
+            },
+            gameplayStop: () => {
+              console.log("[CrazyGames SDK] game.gameplayStop triggered!");
+            },
+            happytime: () => {},
+            inviteLink: () => {}
+          },
           sdkGameLoadingStart: () => {},
           sdkGameLoadingStop: () => {},
           requestInviteUrl: () => {},
@@ -109,15 +153,11 @@
       canvas.addEventListener("click", () => canvas.focus());
       canvas.addEventListener("mousedown", () => canvas.focus());
 
-      const BUILD_VER = "v6";
-
+      const CACHE_BUST = Date.now();
       createUnityInstance(canvas, {
-        dataUrl: "Build/unmatched-ego-2.data?" + BUILD_VER,
-        frameworkUrl: "Build/unmatched-ego-2.framework.js?" + BUILD_VER,
-        codeUrl: "Build/unmatched-ego-2.wasm?" + BUILD_VER,
-        companyName: "CrazyGames",
-        productName: "Unmatched Ego 2",
-        productVersion: "72",
+        dataUrl: "Build/unmatched-ego-2.data?t=" + CACHE_BUST,
+        frameworkUrl: "Build/unmatched-ego-2.framework.js?t=" + CACHE_BUST,
+        codeUrl: "Build/unmatched-ego-2.wasm?t=" + CACHE_BUST,
         cacheControl: function (url) {
           return "no-store";
         }
@@ -138,6 +178,13 @@
           overlay.style.opacity = "0";
           setTimeout(() => overlay.remove(), 500);
         }, 400);
+
+        // Khởi tạo random Awakening ngay khi vào game
+        setTimeout(() => {
+          if (window.randomizeMatchAwakening) {
+            window.randomizeMatchAwakening();
+          }
+        }, 1500);
 
         // Tự động đồng bộ Nickname đã lưu khi game vào sảnh chính
         setTimeout(() => {
@@ -183,10 +230,22 @@
           </div>
         </div>
 
+        <!-- Mục Thức Tỉnh (Awakening) -->
+        <div style="margin-bottom: 12px; border-bottom: 1px solid #334466; padding-bottom: 10px;">
+          <div style="font-size: 12px; color: #00f0ff; margin-bottom: 5px; font-weight: bold;">
+            ⚡ THỨC TỈNH (AWAKENING):
+          </div>
+          <div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px;">
+            Đang dùng: <b id="mod-active-awakening" style="color: #ff0077;">(Tự động Random khi vào trận)</b>
+          </div>
+          <button class="mod-btn" style="background: linear-gradient(90deg, #ff0077, #7000ff); color: #fff; font-weight: bold; text-align: center;" onclick="const r = window.randomizeMatchAwakening(); alert('Đã Random Awakening mới: ' + (AWAKENING_NAMES[r] || r));">🎲 Đổi Ngẫu Nhiên Awakening</button>
+        </div>
+
         <div style="font-size: 12px; color: #00ff88; margin-bottom: 10px; line-height: 1.5;">
-          ✓ Kỹ năng (Skills): <b>ĐÃ MỞ KHÓA 100%</b><br>
-          ✓ Tiền tệ (Coins): <b>ĐÃ GỠ BỎ RÀO CẢN LÕI</b><br>
-          <span style="color: #cbd5e1; font-size: 11px;">(Mua Skin, Phụ kiện, Quay Gacha hoàn toàn miễn phí trực tiếp từ engine)</span>
+          ✓ Kỹ năng (Skills): <b>ĐÃ MỞ KHÓA MIỄN PHÍ 100%</b><br>
+          ✓ Tiền tệ (Coins): <b>ĐÃ GỠ BỎ RÀO CẢN GIÁ TIỀN</b><br>
+          ✓ Thức tỉnh (Awakening): <b>TỰ ĐỘNG RANDOM KHI VÀO TRẬN</b><br>
+          <span style="color: #cbd5e1; font-size: 11px;">(Đã tắt quay gacha tiền, tự động nhận ngẫu nhiên khi vào sân)</span>
         </div>
         <div style="margin-top: 10px; border-top: 1px solid #334466; padding-top: 8px; font-size: 11px; color: #cbd5e1; line-height: 1.5;">
           <b>🎮 Phím điều khiển kỹ năng:</b><br>
@@ -273,6 +332,16 @@
           content.style.display = "none";
         } else {
           initNicknameUI();
+          try {
+            const mod = window.unityInstance ? window.unityInstance.Module : (window.Module || null);
+            if (mod && mod.HEAP32) {
+              const curIdx = mod.HEAP32[0x550000 >> 2];
+              const displayEl = document.getElementById("mod-active-awakening");
+              if (displayEl && curIdx >= 0 && curIdx <= 13) {
+                displayEl.innerText = (AWAKENING_NAMES[curIdx] || 'Awakening') + ' (#' + curIdx + ')';
+              }
+            }
+          } catch(e) {}
           content.style.display = "block";
         }
       }
