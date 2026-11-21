@@ -171,36 +171,52 @@ flowchart TD
 ---
 
 ### 3.5. `unmatched__ego/Build/unmatched-ego-2.wasm`
-- **Mục đích:** "Trái tim" của toàn bộ trò chơi — chứa toàn bộ mã máy C++ (biên dịch từ toàn bộ mã C# của game thông qua Unity IL2CPP). Dung lượng: ~29.7 MB.
-- **Bản vá mở khóa kỹ năng trực tiếp (Binary Patches Applied):**
-  Để cho phép trang bị toàn bộ kỹ năng miễn phí mà không phụ thuộc vào dữ liệu lưu cục bộ hay tiền ảo, 6 vị trí quan trọng trong tệp nhị phân đã được ghi đè trực tiếp với quy tắc **Zero-offset drift** (bảo toàn 100% kích thước byte ban đầu):
+- **Mục đích:** "Trái tim" của toàn bộ trò chơi — chứa toàn bộ mã máy C++ (biên dịch từ toàn bộ mã C# của game thông qua Unity IL2CPP). Dung lượng chuẩn: `29,724,971 bytes`.
+- **Bản vá nhị phân toàn diện (Full Binary Patches Applied across Phases 1 - 3B):**
+  Tất cả 23 vị trí quan trọng trong tệp nhị phân đã được ghi đè trực tiếp với quy tắc **Zero-offset drift** (bảo toàn 100% kích thước byte ban đầu và đạt `WebAssembly.validate() === true`):
 
-| Thứ tự | Hàm trong WASM | Byte Offset | Kích thước | Logic C# Gốc | Logic Sau Khi Vá |
-| :---: | :--- | :---: | :---: | :--- | :--- |
-| **1** | **Func #43444** | `11981431` | 118 bytes | `UnlockableSkill.IsUnlocked` | Trả về luôn hằng số `1` (`true`) |
-| **2** | **Func #43437** | `11980182` | 95 bytes | `UnlockableSkill.IsSkillUnlocked` | Trả về luôn hằng số `1` (`true`) |
-| **3** | **Func #43443** | `11981228` | 202 bytes | `unlockedList.Contains(skillIndex)` | Trả về luôn hằng số `1` (`true`) |
-| **4** | **Func #84201** | `21198836` | 15 bytes | Vtable Stub cho `RefreshButton` | Trả về luôn hằng số `1` (`true`) |
-| **5** | **Func #84202** | `21198852` | 17 bytes | Vtable Stub cho `IsUnlocked` | Trả về luôn hằng số `1` (`true`) |
-| **6** | **Func #84195** | `21198568` | 15 bytes | Vtable Stub cho `IsSkillUnlocked` | Trả về luôn hằng số `1` (`true`) |
+| Nhóm Tính Năng | Hàm trong WASM | Byte Offset | Kích thước | Logic C# Gốc | Logic Sau Khi Vá |
+| :--- | :--- | :---: | :---: | :--- | :--- |
+| **Tiền tệ (Phase 1)** | **Func #84768** | `21303061` | 126 bytes | `CurrencyManager.CheckMoney` | Trả về luôn hằng số `1` (`true`) |
+| **Tiền tệ (Phase 1)** | **Func #23357** | `6301755` | 160 bytes | `CurrencyManager.SpendMoney` | Trả về `0` (không trừ coin) |
+| **Tiền tệ (Phase 1)** | **Func #3197** | `899282` | 25 bytes | Old currency check | Trả về `1` (`true`) |
+| **Tiền tệ (Phase 1)** | **Func #1328** | `558097` | 68 bytes | Old currency spend | Trả về `0` (không trừ coin) |
+| **Tiền tệ (Phase 1)** | **Func #84531** | `21250746` | 17 bytes | Vtable Stub cho CheckMoney | Trả về `1` (`true`) |
+| **Kỹ năng (Phase 2)** | **Func #84202** | `21198852` | 17 bytes | `UnlockableSkill.IsUnlocked` Stub | Trả về `1` (`true`) |
+| **Kỹ năng (Phase 2)** | **Func #43444** | `11981431` | 118 bytes | `UnlockableSkill.IsUnlocked` Core | Trả về `1` (`true`) |
+| **Kỹ năng (Phase 2)** | **Func #84195** | `21198568` | 15 bytes | `UnlockableSkill.IsSkillUnlocked` Stub | Trả về `1` (`true`) |
+| **Kỹ năng (Phase 2)** | **Func #43437** | `11980182` | 95 bytes | `UnlockableSkill.IsSkillUnlocked` Core | Trả về `1` (`true`) |
+| **Kỹ năng (Phase 2)** | **Func #23212** | `6276939` | 121 bytes | `UnlockableSkill.OnClick` Core | Nhảy thẳng sang Equip (`#43441`) |
+| **Kỹ năng (Phase 2)** | **Func #23213** | `6277062` | 175 bytes | `UnlockableSkill.OnUnlockConfirmed` Core | Nhảy thẳng sang Equip (`#43441`) |
+| **Kỹ năng (Phase 2)** | **Func #84200** | `21198779` | 56 bytes | `UnlockableSkill.OnClick` Invoker | Nhảy thẳng sang Equip (`#43441`) |
+| **Kỹ năng (Phase 2)** | **Func #84199** | `21198718` | 60 bytes | `UnlockableSkill.OnUnlockConfirmed` Invoker | Nhảy thẳng sang Equip (`#43441`) |
+| **Gacha (Phase 3A)** | **Func #78510** | `20222295` | 52 bytes | `GachaSystem.ClearDisplay/StartRoll` | Thoát hàm rỗng (`void return`) |
+| **Gacha (Phase 3A)** | **Func #77081** | `20015407` | 44 bytes | `GachaSystem.StartRoll` Core | Trả về local 0 (thoát ngay) |
+| **Gacha (Phase 3A)** | **Func #78509** | `20222242` | 52 bytes | `GachaSystem.RollRoutine` Thunk | Thoát hàm rỗng (`void return`) |
+| **Gacha (Phase 3A)** | **Func #2619** | `805178` | 50 bytes | `GachaSystem.StartRoll` Invoker | Trả về local 0 (thoát ngay) |
+| **Gacha (Phase 3A)** | **Func #1625** | `605400` | 531 bytes | `GachaSystem.StartRoll` Core | Trả về local 0 (thoát ngay) |
+| **Awakening (Dynamic)** | **Func #35178** | `9717138` | 670 bytes | `GachaSystem.GetSlotAwakeningIndex` | PRNG 32-bit LCG chọn ngẫu nhiên 0..13 |
+| **Awakening (Dynamic)** | **Func #70218** | `19053525` | 13 bytes | `GachaSystem.SlotHasAwakening` | Lưu `1` vào con trỏ kết quả (`true`) |
+| **Awakening (Dynamic)** | **Func #15138** | `3886160` | 74 bytes | `GachaSystem.GetSelectedAwakeningIndex` | Bộ máy PRNG 32-bit LCG (wasmTable[88158]) tịnh tiến seed `0x550004` & re-roll Awakening `0x550000` |
+| **Awakening (Dynamic)** | **Func #73237 Loc 1** | `19534168` | 11 bytes | `PlayerView.HandlePassives` call PRNG | Gọi `Func #15138` mỗi khi cầu thủ nhận Awakening để re-roll ngẫu nhiên mới |
+| **Awakening (Dynamic)** | **Func #73237 Loc 1b** | `19534179` | 11 bytes | `PlayerView.HandlePassives` load fresh | Nạp Awakening mới sinh từ `0x550000` vào `local 1` |
+| **Awakening (Dynamic)** | **Func #73237 Loc 2** | `19534276` | 11 bytes | `PlayerView.HandlePassives` tee fresh | Nạp và đồng bộ Awakening mới vào cả `PassiveController` và `VisualController` |
 
-- **Bản vá gỡ bỏ hoàn toàn cơ chế tiền tệ (Currency Core Bypass Patches):**
-  Nhằm loại bỏ hoàn toàn rào cản tiền bạc (không cần phải nạp coin thủ công), 3 hàm kiểm tra và chi tiêu tiền tệ của `CurrencyManager` đã được vá trực tiếp trong WebAssembly:
-
-| Thứ tự | Hàm trong WASM | Byte Offset | Kích thước | Logic C# Gốc | Logic Sau Khi Vá |
-| :---: | :--- | :---: | :---: | :--- | :--- |
-| **7** | **Func #84531** | `21250746` | 17 bytes | `CurrencyManager.CheckMoney` | Luôn trả về `1` (`true` - đủ tiền) |
-| **8** | **Func #3197** | `899282` | 25 bytes | `CurrencyManager.SpendMoney` | Trả về `0` ngay lập tức (không trừ coin) |
-| **9** | **Func #1328** | `558097` | 68 bytes | `CurrencyManager.SaveMoney` | Trả về `0` ngay lập tức (không lưu giảm coin) |
-
-- **Kết quả thực tế trong game:** Giao diện chọn kỹ năng hiển thị ngay **"EQUIP"** (miễn phí), mọi món đồ trong Shop/Trang phục (`UnlockableItem`) và vòng quay thức tỉnh (`GachaSystem`) đều mở khóa tức thì mà không hề bị chặn bởi số dư.
+- **Kết quả thực tế trong game:**
+  - Kỹ năng miễn phí 100%, bấm "Equip" là trang bị ngay.
+  - Vòng quay Gacha tiền tệ ở sảnh bị vô hiệu hóa, không tốn coin.
+  - Trong trận đấu, giữ nguyên 100% cơ chế gốc của game về thời điểm và cầu thủ nhận Awakening; mỗi lần nhận Awakening, game tự động re-roll một kỹ năng thức tỉnh ngẫu nhiên mới (trong 14 loại 0..13) mà không lặp lại cố định một loại của sảnh.
 
 ---
 
 ### 3.6. `unmatched__ego/Build/unmatched-ego-2.data`
-- **Mục đích:** Kho lưu trữ tài nguyên nén đóng gói của Unity WebGL (dung lượng ~56.2 MB).
-- **Thành phần:** Chứa toàn bộ AssetBundle gộp, mô hình cầu thủ 3D, bóng, sân vận động cỏ, hoạt ảnh sút bóng/chạy/ăn mừng, các hiệu ứng hạt particle shader và file âm thanh âm trường.
-- **Liên kết:** Được nạp bởi `unmatched-ego-2.loader.js` vào bộ nhớ RAM của trình duyệt khi mở game.
+- **Mục đích:** Kho lưu trữ tài nguyên nén đóng gói của Unity WebGL (dung lượng chuẩn: `56,265,176 bytes`).
+- **Bản vá chuỗi giao diện người dùng (String Replacements Applied):**
+  Các chuỗi văn bản giá tiền và mua sắm trong file data đã được thay thế trực tiếp, giữ nguyên 100% kích thước byte:
+  - `Buy ({0})` (9b) $\rightarrow$ `Equip    ` (9b)
+  - `Unlock {0} for {1} coins?` (25b) $\rightarrow$ `Equip {0}?               ` (25b)
+  - `ROLL\n1000 COINS` (15b) $\rightarrow$ `RANDOM\nIN MATCH` (15b)
+  - `Not enough coins!` (17b) $\rightarrow$ `RANDOM IN MATCH\0\0` (17b)
 
 ---
 
@@ -248,25 +264,33 @@ Thư mục `scratch/` là **kho vũ khí kỹ thuật** chứa toàn bộ các c
 ---
 
 ### 4.4. Nhóm Script Vá Mã Nhị Phân (Binary Patching Tools)
-- **`scratch/patch_all_skills.py` (Script Mod Kỹ Năng Quan Trọng Nhất):**
-  - Tự động tạo bản sao lưu `unmatched-ego-2.wasm.orig`.
-  - Định nghĩa hàm tạo khối vá trả về `1`: `make_return_1_patch(sz)` tạo chuỗi byte:
-    `[0x00] [0x41, 0x01] [0x01 x (sz - 4)] [0x0b]`
-    *(0 biến cục bộ, đẩy hằng số 1 vào stack, đệm NOP cho đủ chiều dài, kết thúc hàm)*.
-  - Áp dụng bản vá cho cả 6 hàm (#43444, #43437, #43443, #84201, #84202, #84195) mà không làm lệch địa chỉ của toàn bộ tệp WASM.
-- **`scratch/apply_wasm_skill_patch.py`:** Bản script rút gọn dùng để vá nhanh 2 hàm stub chính.
+- **`scratch/apply_phase3b_v2.py` (Script Tổng Hợp Vá Toàn Bộ Các Giai Đoạn):**
+  - Tự động đọc bản gốc `unmatched-ego-2.wasm.bak` và `unmatched-ego-2.data.bak`.
+  - Áp dụng đầy đủ 23 điểm vá WASM (Tiền tệ, Kỹ năng, Gacha, Random Awakening) và các chuỗi giao diện người dùng.
+  - Tự động chạy xác thực `WebAssembly.validate()`.
+- **`scratch/patch_all_skills.py`:** Script vá kỹ năng Phase 2 ban đầu.
+- **`scratch/apply_phase3a.py` & `apply_phase3b.py`:** Các script nghiên cứu và phát triển theo từng giai đoạn.
 - **`scratch/patch_framework.py`:** Đọc tệp `Build/unmatched-ego-2.framework.js`, tự động chèn mock SDK CrazyGames, xử lý tắt quảng cáo và gắn bẫy `handleException`.
 - **`scratch/patch_framework_user.py`:** Vá `framework.js` để đẩy `z-index` của bàn phím ảo lên mức cao nhất (`999999`) và kích hoạt sự kiện click chuột cho nút OK.
 
 ---
 
-### 4.5. Nhóm Kịch Bản Kiểm Thử Giao Diện Tự Động (Headless Automation & QA)
-- **`scratch/test_user_flow.js`:** Script tự động khởi chạy máy chủ Node.js ngầm, sau đó dùng Chrome không đầu (Headless Chrome) kết nối qua giao thức **Chrome DevTools Protocol (CDP)** trên cổng `9234`, nạp trang web, lắng nghe log console, thiết lập `localStorage` và chụp ảnh màn hình xác thực.
-- **`scratch/test_typing*.js` & `test_setname.js`:** Các kịch bản giả lập hành vi người dùng: click vào ô nhập tên, gõ ký tự bàn phím, nhấn nút Lưu, xác nhận thông điệp đổi tên thành công.
-- **Các tệp ảnh chụp màn hình kiểm định (`*.png`):**
-  - `test_patched_menu.png`: Minh chứng giao diện kỹ năng hiển thị nút "Equip".
-  - `test_setname_result.png`: Minh chứng tên người chơi đã được cập nhật thành công.
-  - `game_screen_loaded.png`: Minh chứng game nạp thành công vào màn hình 3D.
+### 4.5. Nhóm Kịch Bản Kiểm Thử Giao Diện & Trận Đấu Tự Động (Headless CDP & E2E)
+- **`scratch/e2e_phase4a_test.js` (Kịch Bản Kiểm Thử E2E Toàn Diện):**
+  - Khởi động server Node.js ngầm trên cổng tự do, kết nối Chrome Headless qua Chrome DevTools Protocol (CDP).
+  - Tự động kiểm tra tuần tự: Nạp game $\rightarrow$ Kiểm tra bộ nhớ ban đầu $\rightarrow$ Bỏ qua popup $\rightarrow$ Kiểm tra Mod Menu UI $\rightarrow$ Mở & nhấp Gacha panel (`RANDOM IN MATCH`) $\rightarrow$ Mở & trang bị Kỹ năng trực tiếp $\rightarrow$ Ghép trận Casual Match $\rightarrow$ Chọn đội và spawn vào sân cỏ $\rightarrow$ Đo đọc chỉ số Awakening trong trận $\rightarrow$ Đổi ngẫu nhiên Awakening Trận 2.
+  - Xuất báo cáo chi tiết ra file `scratch/e2e_phase4a_report.json`.
+- **`scratch/verify_phase3b_gameplay.js` & `test_spawn_player.js`:** Các kịch bản kiểm tra spawn nhân vật và bốc tách biến bộ nhớ `0x550000`.
+- **Các tệp ảnh chụp màn hình kiểm định E2E (`e2e_4a_*.png`):**
+  - `e2e_4a_1_lobby.png`: Sảnh chờ game sau khi bỏ qua popup.
+  - `e2e_4a_2_mod_menu.png`: Menu mod hiển thị đổi Nickname và Awakening đang dùng.
+  - `e2e_4a_3_gacha_panel.png`: Bảng Gacha hiển thị nút `RANDOM\nIN MATCH`.
+  - `e2e_4a_4_gacha_clicked.png`: Bấm thử nút Gacha xác nhận an toàn, không tốn coin.
+  - `e2e_4a_5_skills_overview.png`: Màn hình toàn bộ kỹ năng miễn phí với nút `Equip`.
+  - `e2e_4a_6_skills_equipped.png`: Trang bị trực tiếp thành công không hiện hộp thoại mua.
+  - `e2e_4a_7_room_joined.png`: Màn hình phòng chờ kết nối.
+  - `e2e_4a_8_gameplay_match1_4.png`: Cầu thủ spawn trên sân bóng thi đấu cùng Awakening #0 (Playmaker).
+  - `e2e_4a_9_gameplay_match2.png`: Đổi Awakening ngẫu nhiên sang #1 (Speedster) cho trận đấu tiếp theo.
 
 ---
 

@@ -87,8 +87,8 @@ Gỡ bỏ hoàn toàn cơ chế tiêu tiền quay Gacha ở sảnh chờ:
   - `ROLL\n1000 COINS` (15 bytes) $\rightarrow$ `RANDOM\nIN MATCH` (15 bytes).
   - `Not enough coins!` (17 bytes) $\rightarrow$ `RANDOM IN MATCH\0\0` (17 bytes).
 
-### 3.5. Tự Động Cấp Ngẫu Nhiên Awakening Khi Vào Trận (Phase 3B)
-Thay vì bắt người chơi chọn hay quay gacha ở sảnh, khi vào trận đấu, Awakening sẽ được tự động chọn ngẫu nhiên trong danh sách 14 kỹ năng thức tỉnh (`0..13`):
+### 3.5. Cơ Chế Thức Tỉnh Động Ngẫu Nhiên Trong Trận Đấu (Dynamic In-Match Multi-Awakening)
+Theo đúng cơ chế gốc của game, trong một trận đấu một cầu thủ có thể được kích hoạt/nhận Awakening nhiều lần (thông qua quyết định của Simulation/Quantum Engine). Thay vì bị gán cứng một loại Awakening duy nhất chọn từ ngoài sảnh, bản vá can thiệp để **mỗi lần nhận Awakening trong trận đấu đều được random một kỹ năng mới khác nhau** trong danh sách 14 loại thức tỉnh (`0..13`):
 1. **Playmaker** (0)
 2. **Speedster** (1)
 3. **Fakeout** (2)
@@ -104,14 +104,24 @@ Thay vì bắt người chơi chọn hay quay gacha ở sảnh, khi vào trận 
 13. **Inspiration** (12)
 14. **Destroyer** (13)
 
-**Cơ chế kỹ thuật thực thi:**
-- **Địa chỉ bộ nhớ chia sẻ `0x550000`:** Dùng làm con trỏ lưu trữ chỉ số Awakening ngẫu nhiên đang kích hoạt.
-- **Func #73237 (`PlayerView.HandlePassives`):**
-  - Vị trí 1 (Offset `19534168`, 11b): Vá mã nạp sang `41 80 80 d4 02 28 02 00 21 01 01` (`i32.const 0x550000; i32.load; local.set 1; nop`).
-  - Vị trí 2 (Offset `19534276`, 11b): Vá mã nạp sang `41 80 80 d4 02 28 02 00 22 01 01` (`i32.const 0x550000; i32.load; local.tee 1; nop`).
-  - $\rightarrow$ Khi nhân vật spawn trên sân bóng, cả 2 PassiveComponent (`0x50` và `0xbc`) đều tự động tiếp nhận Awakening ngẫu nhiên tại `0x550000`.
-- **Func #35178 (`GachaSystem.GetSlotAwakeningIndex`) & Func #15138 (`GachaSystem.GetSelectedAwakeningIndex`):** Tích hợp thuật toán giả ngẫu nhiên 32-bit LCG PRNG cập nhật liên tục giá trị `0..13`.
-- **Runtime Hook `index.html`:** Hook sự kiện `CrazyGames.SDK.game.gameplayStart` và khởi tạo trận đấu để sinh ngẫu nhiên `Math.floor(Math.random() * 14)` vào `0x550000`.
+**Kiến trúc kỹ thuật nhị phân (Binary Implementation):**
+- **Địa chỉ bộ nhớ chia sẻ `0x550000` (Awakening ID) & `0x550004` (Seed PRNG):**
+  - `0x550004`: Lưu trữ seed 32-bit cho thuật toán Linear Congruential Generator (LCG).
+  - `0x550000`: Lưu chỉ số Awakening hiện tại (0..13).
+- **Bộ máy sinh số ngẫu nhiên WASM (Func #15138 & wasmTable[88158]):**
+  - Công thức LCG: `seed = (seed * 1664525 + 1013904223 + param0) >>> 0`.
+  - Chỉ số Awakening: `((seed ^ (seed >>> 16)) >>> 0) % 14`.
+  - Ghi seed mới vào `0x550004` và ghi Awakening mới vào `0x550000`.
+- **Can thiệp vào `PlayerView.HandlePassives` (Func #73237):**
+  - **Loc 1 (Offset `19534168`, 11b):** `41 80 80 d4 02 41 00 10 a2 76 01` (`i32.const 0x550000; i32.const 0; call 15138; nop`).
+    - Mỗi khi game gọi `HandlePassives` để trao Awakening cho cầu thủ, nó lập tức kích hoạt bộ sinh ngẫu nhiên `Func #15138`, tịnh tiến seed và bốc một Awakening mới.
+  - **Loc 1b (Offset `19534179`, 11b):** `41 80 80 d4 02 28 02 00 21 01 01` (`i32.const 0x550000; i32.load; local.set 1; nop`).
+    - Nạp ngay Awakening mới bốc được vào `local 1` để thực hiện kiểm tra logic nội bộ.
+  - **Loc 2 (Offset `19534276`, 11b):** `41 80 80 d4 02 28 02 00 22 01 01` (`i32.const 0x550000; i32.load; local.tee 1; nop`).
+    - Đồng bộ Awakening mới này vào cả `PassiveController` (`[PlayerView + 0x50] + 0x0c`) và `VisualController` (`[PlayerView + 0xbc] + 0x0c`).
+- **Giữ nguyên 100% cơ chế gốc:**
+  - Không tạo thêm phím bấm hay điều kiện stamina tùy tiện.
+  - Game tự quyết định khi nào và cầu thủ nào được thức tỉnh, chỉ có loại thức tỉnh được nhận là hoàn toàn ngẫu nhiên và biến hóa mỗi lần.
 
 ---
 
