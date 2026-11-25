@@ -171,41 +171,28 @@ flowchart TD
 ---
 
 ### 3.5. `unmatched__ego/Build/unmatched-ego-2.wasm`
-- **Mục đích:** "Trái tim" của toàn bộ trò chơi — chứa toàn bộ mã máy C++ (biên dịch từ toàn bộ mã C# của game thông qua Unity IL2CPP). Dung lượng chuẩn: `29,724,971 bytes`.
-- **Bản vá nhị phân toàn diện (Full Binary Patches Applied across Phases 1 - 3B):**
-  Tất cả 23 vị trí quan trọng trong tệp nhị phân đã được ghi đè trực tiếp với quy tắc **Zero-offset drift** (bảo toàn 100% kích thước byte ban đầu và đạt `WebAssembly.validate() === true`):
+- **Mục đích:** "Trái tim" của toàn bộ trò chơi — chứa toàn bộ mã máy C++ (biên dịch từ toàn bộ mã C# của game thông qua Unity IL2CPP + Photon Quantum). Dung lượng chuẩn: `29,724,971 bytes`.
+- **Bản vá nhị phân toàn diện (Verified v2 Patches via `scratch/apply_dynamic_awakening_v2.py`):**
+  Toàn bộ các điểm can thiệp được tra cứu chính xác từ `CodeGenModule` và giữ nguyên 100% kích thước byte (**Zero-offset drift**, đạt `WebAssembly.validate() === true`):
 
 | Nhóm Tính Năng | Hàm trong WASM | Byte Offset | Kích thước | Logic C# Gốc | Logic Sau Khi Vá |
 | :--- | :--- | :---: | :---: | :--- | :--- |
-| **Tiền tệ (Phase 1)** | **Func #84768** | `21303061` | 126 bytes | `CurrencyManager.CheckMoney` | Trả về luôn hằng số `1` (`true`) |
-| **Tiền tệ (Phase 1)** | **Func #23357** | `6301755` | 160 bytes | `CurrencyManager.SpendMoney` | Trả về `0` (không trừ coin) |
-| **Tiền tệ (Phase 1)** | **Func #3197** | `899282` | 25 bytes | Old currency check | Trả về `1` (`true`) |
-| **Tiền tệ (Phase 1)** | **Func #1328** | `558097` | 68 bytes | Old currency spend | Trả về `0` (không trừ coin) |
-| **Tiền tệ (Phase 1)** | **Func #84531** | `21250746` | 17 bytes | Vtable Stub cho CheckMoney | Trả về `1` (`true`) |
-| **Kỹ năng (Phase 2)** | **Func #84202** | `21198852` | 17 bytes | `UnlockableSkill.IsUnlocked` Stub | Trả về `1` (`true`) |
-| **Kỹ năng (Phase 2)** | **Func #43444** | `11981431` | 118 bytes | `UnlockableSkill.IsUnlocked` Core | Trả về `1` (`true`) |
-| **Kỹ năng (Phase 2)** | **Func #84195** | `21198568` | 15 bytes | `UnlockableSkill.IsSkillUnlocked` Stub | Trả về `1` (`true`) |
-| **Kỹ năng (Phase 2)** | **Func #43437** | `11980182` | 95 bytes | `UnlockableSkill.IsSkillUnlocked` Core | Trả về `1` (`true`) |
-| **Kỹ năng (Phase 2)** | **Func #23212** | `6276939` | 121 bytes | `UnlockableSkill.OnClick` Core | Nhảy thẳng sang Equip (`#43441`) |
-| **Kỹ năng (Phase 2)** | **Func #23213** | `6277062` | 175 bytes | `UnlockableSkill.OnUnlockConfirmed` Core | Nhảy thẳng sang Equip (`#43441`) |
-| **Kỹ năng (Phase 2)** | **Func #84200** | `21198779` | 56 bytes | `UnlockableSkill.OnClick` Invoker | Nhảy thẳng sang Equip (`#43441`) |
-| **Kỹ năng (Phase 2)** | **Func #84199** | `21198718` | 60 bytes | `UnlockableSkill.OnUnlockConfirmed` Invoker | Nhảy thẳng sang Equip (`#43441`) |
-| **Gacha (Phase 3A)** | **Func #78510** | `20222295` | 52 bytes | `GachaSystem.ClearDisplay/StartRoll` | Thoát hàm rỗng (`void return`) |
-| **Gacha (Phase 3A)** | **Func #77081** | `20015407` | 44 bytes | `GachaSystem.StartRoll` Core | Trả về local 0 (thoát ngay) |
-| **Gacha (Phase 3A)** | **Func #78509** | `20222242` | 52 bytes | `GachaSystem.RollRoutine` Thunk | Thoát hàm rỗng (`void return`) |
-| **Gacha (Phase 3A)** | **Func #2619** | `805178` | 50 bytes | `GachaSystem.StartRoll` Invoker | Trả về local 0 (thoát ngay) |
-| **Gacha (Phase 3A)** | **Func #1625** | `605400` | 531 bytes | `GachaSystem.StartRoll` Core | Trả về local 0 (thoát ngay) |
-| **Awakening (Dynamic)** | **Func #35178** | `9717138` | 670 bytes | `GachaSystem.GetSlotAwakeningIndex` | PRNG 32-bit LCG chọn ngẫu nhiên 0..13 |
-| **Awakening (Dynamic)** | **Func #70218** | `19053525` | 13 bytes | `GachaSystem.SlotHasAwakening` | Lưu `1` vào con trỏ kết quả (`true`) |
-| **Awakening (Dynamic)** | **Func #15138** | `3886160` | 74 bytes | `GachaSystem.GetSelectedAwakeningIndex` | Bộ máy PRNG 32-bit LCG (wasmTable[88158]) tịnh tiến seed `0x550004` & re-roll Awakening `0x550000` |
-| **Awakening (Dynamic)** | **Func #73237 Loc 1** | `19534168` | 11 bytes | `PlayerView.HandlePassives` call PRNG | Gọi `Func #15138` mỗi khi cầu thủ nhận Awakening để re-roll ngẫu nhiên mới |
-| **Awakening (Dynamic)** | **Func #73237 Loc 1b** | `19534179` | 11 bytes | `PlayerView.HandlePassives` load fresh | Nạp Awakening mới sinh từ `0x550000` vào `local 1` |
-| **Awakening (Dynamic)** | **Func #73237 Loc 2** | `19534276` | 11 bytes | `PlayerView.HandlePassives` tee fresh | Nạp và đồng bộ Awakening mới vào cả `PassiveController` và `VisualController` |
+| **Kỹ năng (Free Equip)** | **Func #19882** | `5399356` | 84 bytes | `.UnlockableSkill.IsUnlocked` | Trả về hằng số `1` (`true`) |
+| **Kỹ năng (Free Equip)** | **Func #13574** | `3505570` | 78 bytes | `.UnlockableSkill.IsSkillUnlocked` | Trả về hằng số `1` (`true`) |
+| **Tiền tệ (Free Equip)** | **Func #19927** | `5415551` | 44 bytes | `.CurrencyManager.SpendMoney` | Trả về hằng số `1` (`true`), không trừ Coin |
+| **Tắt Gacha Sảnh** | **Func #71277** | `19177554` | 225 bytes | `.GachaSystem.StartRoll` | Thoát hàm rỗng (`void return`) |
+| **Helper Roll Động** | **Func #71267** | `19175946` | 1018 bytes | `.<RollRoutine>d__39.MoveNext` | `RollDifferentAwakening`: gọi `RNGSession.Next` (`#15255`) chọn `1..14` luôn khác Awakening trước; ghi telemetry `0x550000..0x55000c` |
+| **Helper Guard/Init** | **Func #35717** | `9840797` | 336 bytes | `.GachaSystem.PickRarity` | `GuardOrInitAwakening`: trả `-1` nếu `disableAwk != 0`; khởi tạo ngẫu nhiên khi ngoài `[1..14]` |
+| **Helper HUD Sync** | **Func #73489** | `19565713` | 401 bytes | `CrazyGames.BannerModuleDemo.RequestVideo` | `SyncHudAwakening`: đọc `GachaSystem.Instance->awakenings` (`+0x18`) và cập nhật `GameManager->awkName` (`+0x400`) |
+| **Hook Update** | **Func #85853** | `21446736` (`+294`) | 35 bytes | `Quantum.MovementSystem.Update` | Ngừng gán cứng `RuntimePlayer->awkIndex` (`+0x74`), gọi `GuardOrInitAwakening` (`#35717`) |
+| **Hook Grant** | **Func #23569** | `6349177` | 1325 bytes | `GameplaySystem.GrantRandomAwakening` | Gọi `RollDifferentAwakening` (`#71267`) khi hệ thống chọn người nhận Awakening trong trận Thường & Private |
+| **Hook Perform** | **Func #44328** | `12233811` | 795 bytes | `Quantum.MovementSystem.PerformAwk` | Sau khi dùng Awakening thành công (`currentSkill = old + 50`), gọi `RollDifferentAwakening` (`#71267`) đổi sang loại khác cho lần sau |
+| **Hook HUD** | **Func #56046** | `17307981` (`+2199`) | 11 bytes | `PlayerView.OnUpdateView` | Gọi `SyncHudAwakening` (`#73489`) trong nhánh `PlayerIsLocal` |
 
 - **Kết quả thực tế trong game:**
-  - Kỹ năng miễn phí 100%, bấm "Equip" là trang bị ngay.
-  - Vòng quay Gacha tiền tệ ở sảnh bị vô hiệu hóa, không tốn coin.
-  - Trong trận đấu, giữ nguyên 100% cơ chế gốc của game về thời điểm và cầu thủ nhận Awakening; mỗi lần nhận Awakening, game tự động re-roll một kỹ năng thức tỉnh ngẫu nhiên mới (trong 14 loại 0..13) mà không lặp lại cố định một loại của sảnh.
+  - Kỹ năng miễn phí 100%, bấm "Equip" trang bị vào slot ngay không mất Coin (`500` giữ nguyên).
+  - Vòng quay Gacha ở sảnh bị vô hiệu hóa (`RANDOM\nIN MATCH`), không tốn Coin.
+  - Trong cả **Normal / Casual / Ranked / Bot Match** và **Private Match (thường & Infinite Abilities)**, game giữ nguyên hoàn toàn điều kiện và cơ chế chọn người nhận Awakening, nhưng mỗi lần khởi tạo, được trao hoặc kích hoạt (`F`), `Player->awkIndex` đều được random sang một loại khác trong `[1..14]` và hiển thị đúng tên trên HUD.
 
 ---
 
